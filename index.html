@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CoolFood Lab — Enfriamiento de Alimentos</title>
+  <meta name="description" content="Simulador interactivo del enfriamiento de alimentos mediante la Ley de Newton. Visualiza curvas de temperatura, animaciones y modelos matemáticos." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js" id="MathJax-script" async></script>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ===== PARTÍCULAS DE FONDO ===== -->
+  <div class="particles" id="particles"></div>
+
+  <!-- ===== HEADER ===== -->
+  <header class="header">
+    <div class="header-inner">
+      <div class="logo">
+        <span class="logo-icon">🌡️</span>
+        <span class="logo-text">CoolFood<span class="logo-accent">Lab</span></span>
+      </div>
+      <nav class="nav-tabs" role="tablist">
+        <button class="nav-tab active" id="tab-sim" role="tab" aria-selected="true" onclick="showSection('simulator')">
+          <span class="tab-icon">🧪</span> Simulador
+        </button>
+        <button class="nav-tab" id="tab-math" role="tab" aria-selected="false" onclick="showSection('math')">
+          <span class="tab-icon">📐</span> Modelo Matemático
+        </button>
+        <button class="nav-tab" id="tab-story" role="tab" aria-selected="false" onclick="showSection('story')">
+          <span class="tab-icon">📖</span> Historia
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- ===== HERO ===== -->
+  <section class="hero">
+    <div class="hero-content">
+      <p class="hero-badge">🔬 Ecuaciones Diferenciales · Física Térmica</p>
+      <h1 class="hero-title">El Arte de <em>Enfriar</em></h1>
+      <p class="hero-subtitle">
+        Explora cómo la temperatura de tus alimentos favoritos desciende con el tiempo,
+        modelado con la <strong>Ley de Enfriamiento de Newton</strong>.
+      </p>
+    </div>
+    <div class="hero-thermometer" aria-hidden="true">
+      <div class="thermo-body">
+        <div class="thermo-tube">
+          <div class="thermo-mercury" id="heroMercury"></div>
+        </div>
+        <div class="thermo-bulb"></div>
+      </div>
+      <div class="thermo-labels">
+        <span>100°C</span><span>75°C</span><span>50°C</span><span>25°C</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== SECCIÓN SIMULADOR ===== -->
+  <section class="section active" id="simulator">
+
+    <!-- SELECTOR DE ALIMENTO -->
+    <div class="container">
+      <h2 class="section-title">Selecciona tu Alimento</h2>
+      <p class="section-subtitle">Cada alimento tiene propiedades térmicas únicas que afectan su curva de enfriamiento.</p>
+
+      <div class="food-grid" role="radiogroup" aria-label="Selección de alimento">
+        <div class="food-card selected" id="card-pizza" role="radio" aria-checked="true" tabindex="0" onclick="selectFood('pizza')" onkeydown="if(event.key==='Enter')selectFood('pizza')">
+          <div class="food-illustration" id="anim-pizza">
+            <!-- SVG Pizza animado -->
+            <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" class="food-svg">
+              <defs>
+                <radialGradient id="pizzaGrad" cx="50%" cy="50%">
+                  <stop offset="0%" stop-color="#f5c842"/>
+                  <stop offset="100%" stop-color="#d4860a"/>
+                </radialGradient>
+              </defs>
+              <circle cx="60" cy="60" r="52" fill="#c8540a" class="pizza-crust"/>
+              <circle cx="60" cy="60" r="44" fill="url(#pizzaGrad)" class="pizza-base"/>
+              <circle cx="60" cy="60" r="36" fill="#e8341a" class="pizza-sauce"/>
+              <circle cx="47" cy="52" r="7" fill="#f5f5f5" opacity="0.9"/>
+              <circle cx="68" cy="48" r="6" fill="#f5f5f5" opacity="0.9"/>
+              <circle cx="60" cy="67" r="6.5" fill="#f5f5f5" opacity="0.9"/>
+              <circle cx="43" cy="68" r="5" fill="#c0392b"/>
+              <circle cx="72" cy="63" r="5" fill="#c0392b"/>
+              <circle cx="57" cy="45" r="4" fill="#c0392b"/>
+              <!-- Steam lines -->
+              <g class="steam" opacity="0">
+                <path d="M50 18 Q53 10 50 4" stroke="#ddd" stroke-width="2" fill="none" stroke-linecap="round"/>
+                <path d="M60 15 Q63 7 60 1" stroke="#ddd" stroke-width="2" fill="none" stroke-linecap="round"/>
+                <path d="M70 18 Q73 10 70 4" stroke="#ddd" stroke-width="2" fill="none" stroke-linecap="round"/>
+              </g>
+            </svg>
+          </div>
+          <div class="food-info">
+            <h3 class="food-name">🍕 Pizza</h3>
+            <p class="food-temp">95°C inicial</p>
+            <span class="food-badge" style="background:#e8341a22;color:#e8341a">k = 0.035 min⁻¹</span>
+          </div>
+        </div>
+
+        <div class="food-card" id="card-pollo" role="radio" aria-checked="false" tabindex="0" onclick="selectFood('pollo')" onkeydown="if(event.key==='Enter')selectFood('pollo')">
+          <div class="food-illustration" id="anim-pollo">
+            <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" class="food-svg">
+              <defs>
+                <radialGradient id="polloGrad" cx="40%" cy="40%">
+                  <stop offset="0%" stop-color="#f4a940"/>
+                  <stop offset="100%" stop-color="#c47b0e"/>
+                </radialGradient>
+              </defs>
+              <!-- Body -->
+              <ellipse cx="62" cy="68" rx="34" ry="28" fill="url(#polloGrad)"/>
+              <!-- Head -->
+              <circle cx="38" cy="48" r="16" fill="#f4a940"/>
+              <!-- Beak -->
+              <polygon points="22,46 16,50 22,54" fill="#f0c040"/>
+              <!-- Eye -->
+              <circle cx="34" cy="44" r="4" fill="#1a1a2e"/>
+              <circle cx="33" cy="43" r="1.5" fill="white"/>
+              <!-- Wing detail -->
+              <ellipse cx="72" cy="70" rx="18" ry="12" fill="#c47b0e" opacity="0.7"/>
+              <!-- Leg -->
+              <rect x="50" y="93" width="5" height="14" rx="2" fill="#c47b0e"/>
+              <rect x="62" y="93" width="5" height="14" rx="2" fill="#c47b0e"/>
+              <!-- Steam -->
+              <g class="steam" opacity="0">
+                <path d="M55 30 Q58 22 55 16" stroke="#ddd" stroke-width="2" fill="none" stroke-linecap="round"/>
+                <path d="M65 27 Q68 19 65 13" stroke="#ddd" stroke-width="2" fill="none" stroke-linecap="round"/>
+              </g>
+            </svg>
+          </div>
+          <div class="food-info">
+            <h3 class="food-name">🍗 Pollo Asado</h3>
+            <p class="food-temp">88°C inicial</p>
+            <span class="food-badge" style="background:#f4a94022;color:#c47b0e">k = 0.028 min⁻¹</span>
+          </div>
+        </div>
+
+        <div class="food-card" id="card-sopa" role="radio" aria-checked="false" tabindex="0" onclick="selectFood('sopa')" onkeydown="if(event.key==='Enter')selectFood('sopa')">
+          <div class="food-illustration" id="anim-sopa">
+            <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" class="food-svg">
+              <defs>
+                <linearGradient id="sopaGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stop-color="#e07b39"/>
+                  <stop offset="100%" stop-color="#9b3a10"/>
+                </linearGradient>
+                <linearGradient id="bowlGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stop-color="#f0ede8"/>
+                  <stop offset="100%" stop-color="#c8c0b0"/>
+                </linearGradient>
+              </defs>
+              <!-- Bowl -->
+              <ellipse cx="60" cy="80" rx="48" ry="14" fill="url(#bowlGrad)"/>
+              <path d="M12 68 Q60 100 108 68" fill="url(#bowlGrad)"/>
+              <!-- Soup liquid -->
+              <ellipse cx="60" cy="67" rx="42" ry="11" fill="url(#sopaGrad)"/>
+              <!-- Veggies floating -->
+              <ellipse cx="48" cy="66" rx="7" ry="4" fill="#e8a020" opacity="0.9"/>
+              <circle cx="67" cy="66" r="5" fill="#4caf50" opacity="0.85"/>
+              <ellipse cx="78" cy="67" rx="5" ry="3" fill="#e05010" opacity="0.9"/>
+              <circle cx="40" cy="68" r="3" fill="#4caf50" opacity="0.8"/>
+              <!-- Rim -->
+              <ellipse cx="60" cy="66" rx="42" ry="7" fill="none" stroke="#d8d0c0" stroke-width="3"/>
+              <!-- Steam -->
+              <g class="steam" opacity="0">
+                <path d="M44 48 Q47 40 44 34" stroke="#ddd" stroke-width="2" fill="none" stroke-linecap="round"/>
+                <path d="M60 44 Q63 36 60 30" stroke="#ddd" stroke-width="2" fill="none" stroke-linecap="round"/>
+                <path d="M76 48 Q79 40 76 34" stroke="#ddd" stroke-width="2" fill="none" stroke-linecap="round"/>
+              </g>
+            </svg>
+          </div>
+          <div class="food-info">
+            <h3 class="food-name">🍜 Sopa</h3>
+            <p class="food-temp">98°C inicial</p>
+            <span class="food-badge" style="background:#e07b3922;color:#9b3a10">k = 0.045 min⁻¹</span>
+          </div>
+        </div>
+
+        <div class="food-card" id="card-cafe" role="radio" aria-checked="false" tabindex="0" onclick="selectFood('cafe')" onkeydown="if(event.key==='Enter')selectFood('cafe')">
+          <div class="food-illustration" id="anim-cafe">
+            <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" class="food-svg">
+              <defs>
+                <linearGradient id="cafeGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stop-color="#5c3317"/>
+                  <stop offset="100%" stop-color="#2c1a0e"/>
+                </linearGradient>
+                <linearGradient id="cupGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#f8f4f0"/>
+                  <stop offset="100%" stop-color="#e0d8d0"/>
+                </linearGradient>
+              </defs>
+              <!-- Saucer -->
+              <ellipse cx="60" cy="98" rx="40" ry="8" fill="#e0d8d0"/>
+              <!-- Cup body -->
+              <path d="M28 62 Q30 96 60 96 Q90 96 92 62 Z" fill="url(#cupGrad)"/>
+              <!-- Coffee liquid -->
+              <ellipse cx="60" cy="62" rx="30" ry="8" fill="url(#cafeGrad)"/>
+              <!-- Cup rim -->
+              <ellipse cx="60" cy="60" rx="30" ry="8" fill="none" stroke="#d8d0c8" stroke-width="3"/>
+              <!-- Handle -->
+              <path d="M90 68 Q110 68 110 80 Q110 92 90 88" fill="none" stroke="#e0d8d0" stroke-width="7" stroke-linecap="round"/>
+              <!-- Foam heart -->
+              <path d="M52 61 Q55 56 60 61 Q65 56 68 61 Q64 66 60 70 Q56 66 52 61Z" fill="#f8f0e8" opacity="0.5"/>
+              <!-- Steam -->
+              <g class="steam" opacity="0">
+                <path d="M48 44 Q51 36 48 30" stroke="#ddd" stroke-width="2" fill="none" stroke-linecap="round"/>
+                <path d="M60 40 Q63 32 60 26" stroke="#ddd" stroke-width="2" fill="none" stroke-linecap="round"/>
+                <path d="M72 44 Q75 36 72 30" stroke="#ddd" stroke-width="2" fill="none" stroke-linecap="round"/>
+              </g>
+            </svg>
+          </div>
+          <div class="food-info">
+            <h3 class="food-name">☕ Café</h3>
+            <p class="food-temp">92°C inicial</p>
+            <span class="food-badge" style="background:#5c331722;color:#5c3317">k = 0.052 min⁻¹</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- CONTROLES -->
+      <div class="controls-panel" id="controlsPanel">
+        <div class="controls-grid">
+          <div class="control-group">
+            <label class="control-label" for="ambientTemp">🌡️ Temperatura Ambiente</label>
+            <div class="slider-row">
+              <input type="range" id="ambientTemp" min="5" max="35" value="22" step="1" class="slider" oninput="updateSliderLabel('ambientTemp','ambientTempVal','°C')" />
+              <span class="slider-val" id="ambientTempVal">22°C</span>
+            </div>
+          </div>
+          <div class="control-group">
+            <label class="control-label" for="simTime">⏱️ Tiempo de simulación</label>
+            <div class="slider-row">
+              <input type="range" id="simTime" min="30" max="240" value="120" step="10" class="slider" oninput="updateSliderLabel('simTime','simTimeVal',' min')" />
+              <span class="slider-val" id="simTimeVal">120 min</span>
+            </div>
+          </div>
+          <div class="control-group">
+            <label class="control-label" for="kMultiplier">💨 Factor de convección</label>
+            <div class="slider-row">
+              <input type="range" id="kMultiplier" min="0.5" max="3.0" value="1.0" step="0.1" class="slider" oninput="updateSliderLabel('kMultiplier','kMultVal','×')" />
+              <span class="slider-val" id="kMultVal">1.0×</span>
+            </div>
+          </div>
+        </div>
+        <div class="btn-group">
+          <button class="btn btn-primary" id="btnSimulate" onclick="runSimulation()">
+            <span class="btn-icon">▶</span> Simular Enfriamiento
+          </button>
+          <button class="btn btn-secondary" id="btnReset" onclick="resetSimulation()">
+            <span class="btn-icon">↺</span> Reiniciar
+          </button>
+          <button class="btn btn-ghost" id="btnCompare" onclick="toggleCompare()">
+            <span class="btn-icon">⚖️</span> Comparar Alimentos
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ÁREA DE VISUALIZACIÓN -->
+    <div class="container">
+      <div class="viz-layout">
+
+        <!-- Panel izquierdo: alimento animado + temperatura actual -->
+        <div class="viz-left">
+          <div class="food-stage" id="foodStage">
+            <div class="stage-bg" id="stageBg"></div>
+            <div class="food-display" id="foodDisplay">
+              <!-- Se rellena por JS -->
+            </div>
+            <div class="steam-container" id="steamContainer">
+              <div class="steam-particle" style="left:40%;animation-delay:0s"></div>
+              <div class="steam-particle" style="left:50%;animation-delay:0.4s"></div>
+              <div class="steam-particle" style="left:60%;animation-delay:0.8s"></div>
+            </div>
+            <div class="temp-badge" id="tempBadge">
+              <span class="temp-value" id="currentTempDisplay">95</span>
+              <span class="temp-unit">°C</span>
+            </div>
+          </div>
+          <div class="progress-timeline" id="progressTimeline">
+            <div class="timeline-bar">
+              <div class="timeline-fill" id="timelineFill"></div>
+            </div>
+            <div class="timeline-labels">
+              <span id="timeLabel">t = 0 min</span>
+              <span id="phaseLabel" class="phase-hot">🔥 Muy Caliente</span>
+            </div>
+          </div>
+          <div class="stats-mini">
+            <div class="stat-card">
+              <span class="stat-icon">🌡️</span>
+              <span class="stat-val" id="statCurrent">--</span>
+              <span class="stat-desc">Temp. Actual</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-icon">📉</span>
+              <span class="stat-val" id="statRate">--</span>
+              <span class="stat-desc">Tasa (°C/min)</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-icon">⏰</span>
+              <span class="stat-val" id="statSafe">--</span>
+              <span class="stat-desc">Zona segura</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Panel derecho: gráfica -->
+        <div class="viz-right">
+          <div class="chart-card">
+            <div class="chart-header">
+              <h3 class="chart-title">Curva de Enfriamiento</h3>
+              <div class="chart-legend" id="chartLegend"></div>
+            </div>
+            <div class="chart-wrapper">
+              <canvas id="coolingChart" aria-label="Gráfica de curva de enfriamiento"></canvas>
+            </div>
+            <div class="danger-zones">
+              <span class="zone zone-danger">🔴 Peligroso &gt;60°C</span>
+              <span class="zone zone-warn">🟡 Precaución 40-60°C</span>
+              <span class="zone zone-safe">🟢 Seguro &lt;40°C</span>
+            </div>
+          </div>
+
+          <!-- Gráfica de tasa de cambio -->
+          <div class="chart-card" style="margin-top:1.5rem">
+            <div class="chart-header">
+              <h3 class="chart-title">Tasa de Enfriamiento dT/dt</h3>
+            </div>
+            <div class="chart-wrapper" style="height:200px">
+              <canvas id="rateChart" aria-label="Gráfica de tasa de cambio de temperatura"></canvas>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- STORYTELLING CARDS -->
+    <div class="container">
+      <div class="story-cards" id="storyCards">
+        <div class="story-card" id="sc1">
+          <div class="sc-icon">🔥</div>
+          <h4>Fase Inicial</h4>
+          <p>En los primeros minutos la diferencia de temperatura es máxima, por lo que el calor se transfiere muy rápido al ambiente.</p>
+        </div>
+        <div class="story-card" id="sc2">
+          <div class="sc-icon">🌡️</div>
+          <h4>Enfriamiento Acelerado</h4>
+          <p>La curva desciende de forma exponencial. La tasa de pérdida de calor es proporcional a ΔT = T - T_amb.</p>
+        </div>
+        <div class="story-card" id="sc3">
+          <div class="sc-icon">⚠️</div>
+          <h4>Zona de Peligro</h4>
+          <p>Entre 60°C y 40°C el alimento aún retiene calor pero las bacterias comienzan a proliferar más activamente.</p>
+        </div>
+        <div class="story-card" id="sc4">
+          <div class="sc-icon">✅</div>
+          <h4>Equilibrio Térmico</h4>
+          <p>El alimento alcanza la temperatura ambiente. La curva se aplana asintóticamente — nunca llega exactamente a T_amb.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== SECCIÓN MODELO MATEMÁTICO ===== -->
+  <section class="section" id="math">
+    <div class="container">
+      <h2 class="section-title">Modelo y Solución de Ecuaciones</h2>
+      <p class="section-subtitle">Fundamento matemático del enfriamiento modelado con ecuaciones diferenciales ordinarias.</p>
+
+      <div class="math-layout">
+
+        <!-- Columna izquierda: ecuaciones -->
+        <div class="math-col">
+          <div class="math-card">
+            <div class="math-card-header">
+              <span class="math-card-num">01</span>
+              <h3>Ley de Enfriamiento de Newton</h3>
+            </div>
+            <p class="math-desc">La tasa de cambio de temperatura de un cuerpo es proporcional a la diferencia entre su temperatura y la del entorno:</p>
+            <div class="equation-box" id="eq1">
+              \[ \frac{dT}{dt} = -k\,(T - T_{amb}) \]
+            </div>
+            <div class="var-table">
+              <div class="var-row"><span class="var-sym">\(T(t)\)</span><span class="var-desc">Temperatura del alimento en el instante \(t\) [°C]</span></div>
+              <div class="var-row"><span class="var-sym">\(T_{amb}\)</span><span class="var-desc">Temperatura ambiente (constante) [°C]</span></div>
+              <div class="var-row"><span class="var-sym">\(k\)</span><span class="var-desc">Constante de enfriamiento [min⁻¹], depende del alimento</span></div>
+              <div class="var-row"><span class="var-sym">\(t\)</span><span class="var-desc">Tiempo transcurrido [min]</span></div>
+            </div>
+          </div>
+
+          <div class="math-card">
+            <div class="math-card-header">
+              <span class="math-card-num">02</span>
+              <h3>Solución Analítica</h3>
+            </div>
+            <p class="math-desc">Separando variables e integrando con condición inicial \(T(0) = T_0\):</p>
+            <div class="equation-box">
+              \[ \int_{T_0}^{T} \frac{dT'}{T' - T_{amb}} = -k \int_0^t dt' \]
+            </div>
+            <div class="equation-box highlight">
+              \[ \boxed{ T(t) = T_{amb} + (T_0 - T_{amb})\,e^{-kt} } \]
+            </div>
+            <p class="math-note">Esta es una función exponencial decreciente que converge asintóticamente a \(T_{amb}\) cuando \(t \to \infty\).</p>
+          </div>
+
+          <div class="math-card">
+            <div class="math-card-header">
+              <span class="math-card-num">03</span>
+              <h3>Método Numérico: Runge-Kutta 4</h3>
+            </div>
+            <p class="math-desc">Para mayor precisión, se usa el método RK4 con paso \(h\):</p>
+            <div class="equation-box">
+              \[ k_1 = h \cdot f(t_n, T_n) \]
+              \[ k_2 = h \cdot f\!\left(t_n + \tfrac{h}{2},\, T_n + \tfrac{k_1}{2}\right) \]
+              \[ k_3 = h \cdot f\!\left(t_n + \tfrac{h}{2},\, T_n + \tfrac{k_2}{2}\right) \]
+              \[ k_4 = h \cdot f(t_n + h,\, T_n + k_3) \]
+              \[ T_{n+1} = T_n + \tfrac{1}{6}(k_1 + 2k_2 + 2k_3 + k_4) \]
+            </div>
+            <p class="math-desc">donde \(f(t, T) = -k(T - T_{amb})\)</p>
+          </div>
+        </div>
+
+        <!-- Columna derecha: parámetros y comparación -->
+        <div class="math-col">
+          <div class="math-card">
+            <div class="math-card-header">
+              <span class="math-card-num">04</span>
+              <h3>Parámetros por Alimento</h3>
+            </div>
+            <table class="param-table">
+              <thead>
+                <tr>
+                  <th>Alimento</th>
+                  <th>\(T_0\) [°C]</th>
+                  <th>\(k\) [min⁻¹]</th>
+                  <th>Vida media</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="row-pizza">
+                  <td>🍕 Pizza</td><td>95</td><td>0.035</td><td>≈ 19.8 min</td>
+                </tr>
+                <tr class="row-pollo">
+                  <td>🍗 Pollo</td><td>88</td><td>0.028</td><td>≈ 24.8 min</td>
+                </tr>
+                <tr class="row-sopa">
+                  <td>🍜 Sopa</td><td>98</td><td>0.045</td><td>≈ 15.4 min</td>
+                </tr>
+                <tr class="row-cafe">
+                  <td>☕ Café</td><td>92</td><td>0.052</td><td>≈ 13.3 min</td>
+                </tr>
+              </tbody>
+            </table>
+            <p class="math-note">La <em>vida media térmica</em> es el tiempo en que \(\Delta T\) se reduce a la mitad: \(t_{1/2} = \ln(2)/k\)</p>
+          </div>
+
+          <div class="math-card">
+            <div class="math-card-header">
+              <span class="math-card-num">05</span>
+              <h3>Comparación Analítica vs. RK4</h3>
+            </div>
+            <div class="chart-wrapper" style="height:280px">
+              <canvas id="comparisonChart" aria-label="Comparación analítica vs RK4"></canvas>
+            </div>
+            <p class="math-note">El error entre la solución analítica y RK4 es menor a 10⁻⁶ °C con \(h = 0.5\) min.</p>
+          </div>
+
+          <div class="math-card">
+            <div class="math-card-header">
+              <span class="math-card-num">06</span>
+              <h3>Análisis de Temperatura Crítica</h3>
+            </div>
+            <p class="math-desc">Tiempo para alcanzar temperaturas de referencia:</p>
+            <div class="equation-box">
+              \[ t^* = \frac{1}{k} \ln\!\left(\frac{T_0 - T_{amb}}{T^* - T_{amb}}\right) \]
+            </div>
+            <div id="criticalTemps" class="critical-temps-display">
+              <!-- Relleno por JS -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== SECCIÓN HISTORIA ===== -->
+  <section class="section" id="story">
+    <div class="container">
+      <h2 class="section-title">La Historia del Enfriamiento</h2>
+      <p class="section-subtitle">Un viaje a través del tiempo, la temperatura y la ciencia que protege tus alimentos.</p>
+
+      <div class="timeline-story">
+        <div class="ts-item ts-left">
+          <div class="ts-dot" style="background:#e8341a"></div>
+          <div class="ts-card">
+            <span class="ts-time">1701</span>
+            <h4>Isaac Newton y la Ley de Enfriamiento</h4>
+            <p>Newton publicó su ley de enfriamiento en <em>Scala graduum Caloris</em>, estableciendo que la tasa de pérdida de calor es proporcional a la diferencia de temperatura con el entorno.</p>
+            <div class="ts-icon">🍎</div>
+          </div>
+        </div>
+        <div class="ts-item ts-right">
+          <div class="ts-dot" style="background:#f4a940"></div>
+          <div class="ts-card">
+            <span class="ts-time">La Pizza Sale del Horno</span>
+            <h4>t = 0 minutos — 95°C</h4>
+            <p>La pizza recién salida del horno está a 95°C. La diferencia con el ambiente (22°C) es de 73°C — el calor se escapa muy rápido. ¡El vapor visible es agua evaporándose!</p>
+            <div class="ts-icon">🍕</div>
+          </div>
+        </div>
+        <div class="ts-item ts-left">
+          <div class="ts-dot" style="background:#f0c040"></div>
+          <div class="ts-card">
+            <span class="ts-time">~10 minutos</span>
+            <h4>Primera caída brusca — ~60°C</h4>
+            <p>En los primeros 10 minutos la pizza ya perdió ~35°C. La tasa es máxima al inicio y disminuye exponencialmente. La costra ya se puede tocar sin quemarse.</p>
+            <div class="ts-icon">⚡</div>
+          </div>
+        </div>
+        <div class="ts-item ts-right">
+          <div class="ts-dot" style="background:#e07b39"></div>
+          <div class="ts-card">
+            <span class="ts-time">~30 minutos</span>
+            <h4>Zona de Peligro Bacteriano — 40-60°C</h4>
+            <p>Según la FDA, entre 4°C y 60°C los alimentos están en la <strong>zona de peligro</strong>. Las bacterias se duplican cada 20 minutos. ¡No dejes tu pizza aquí por más de 2 horas!</p>
+            <div class="ts-icon">⚠️</div>
+          </div>
+        </div>
+        <div class="ts-item ts-left">
+          <div class="ts-dot" style="background:#4caf50"></div>
+          <div class="ts-card">
+            <span class="ts-time">~80 minutos</span>
+            <h4>Equilibrio Térmico — ≈22°C</h4>
+            <p>Después de ~80 minutos, la pizza está a temperatura ambiente. La curva exponencial nunca llega exactamente a T_amb, solo converge asintóticamente.</p>
+            <div class="ts-icon">✅</div>
+          </div>
+        </div>
+        <div class="ts-item ts-right">
+          <div class="ts-dot" style="background:#2196f3"></div>
+          <div class="ts-card">
+            <span class="ts-time">Hoy</span>
+            <h4>Aplicaciones Modernas</h4>
+            <p>La ley de Newton se aplica en refrigeradores inteligentes, empaques térmicos para delivery, diseño de cocinas industriales y control de calidad alimentario.</p>
+            <div class="ts-icon">🏭</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== FOOTER ===== -->
+  <footer class="footer">
+    <div class="footer-inner">
+      <p>🌡️ <strong>CoolFood Lab</strong> — Simulador de Enfriamiento de Alimentos</p>
+      <p style="opacity:0.5;font-size:0.85rem;margin-top:0.3rem">Modelado con Ecuaciones Diferenciales · Ley de Enfriamiento de Newton · RK4</p>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
